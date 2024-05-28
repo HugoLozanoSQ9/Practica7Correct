@@ -1,12 +1,38 @@
 //Definir nuestro servidor 
-
 const express = require('express')
-const kodersUseCase = require('./koders.usecase')
-
+//solicitar el router de los koders
+const kodersRouter = require('./koders.router')
+const mentorsRouter = require('./mentors.router')
 //const app = express Se suele representar el server con app
 const server = express()
 
 server.use(express.json())
+// middleware a nivel de aplicación 
+server.use((req,res,next)=>{
+    console.log('middleware de app')
+
+    const authorization = req.headers.authorization
+
+    if (authorization === 'alohomora'){
+        req.isAWizzard = true
+        next()
+    }else{
+        res.status(403)
+        res.json({
+            message:'No tienes acceso'
+        })
+    }
+
+})
+
+server.use((req,res,next)=>{
+    console.log('middleware de app 2')
+    next()
+})
+
+//Montar el router en el server
+server.use('/koders',kodersRouter)
+server.use('/mentors',mentorsRouter)
 
 //Cuando se haga un get siempre se va mostrar el mensaje "Kodemia API v1"
 server.get('/', (req, res) => {
@@ -14,89 +40,5 @@ server.get('/', (req, res) => {
         message: "Kodemia APIv1"
     })
 })
-
-// GET /koders --> Endpoint
-server.get('/koders',(req,res)=>{
-
-    try {
-        const koders = kodersUseCase.getAll()
-        res.json({
-            message:"All koders",
-            data:{
-                koders:koders,
-            }
-        })
-    } catch (error) {
-        res.status(error.status || 500)
-
-        res.json({
-            //Por defecto muestra el error que está definido 
-            error:error.message
-        })
-    }
-
-})
-
-server.post('/koders',(req,res)=>{
-    try {
-        const newKoder = req.body
-        const koders = kodersUseCase.add(newKoder)
-
-        res.json({
-            message:"koder added",
-            data:{koders}
-        })
-
-    } catch (error) {
-        res.status(error.status || 500)
-
-        res.json({
-            //Por defecto muestra el error que está definido 
-            error:error.message
-        })
-    }
-})
-
-server.delete('/koders',(req,res)=>{
-    try {
-        const koders = kodersUseCase.deleteAll()
-        res.json({
-            message:"All koders deleted",
-            data:{
-                koders
-            }
-        })
-    } catch (error) {
-        res.status(error.status || 500)
-
-        res.json({
-            //Por defecto muestra el error que está definido 
-            error:error.message
-        })
-    }
-})
-
-server.delete('/koders/:name',(req,res)=>{
-    try { 
-        const name = req.params.name
-        const koders = kodersUseCase.deleteByName(name)
-
-        res.json({
-            message:"Koder deleted",
-            data:{
-                koders:koders
-            },
-        })
-
-    } catch (error) {
-        res.status(error.status || 500)
-
-        res.json({
-            //Por defecto muestra el error que está definido 
-            error:error.message
-        })
-    }
-})
-
 
 module.exports = server
